@@ -67,7 +67,7 @@ miso_load_total_w{kind="forecast"} 7.2009e+10 1688792400000
 …
 ```
 
-`GET /renewable_production` returns actual production from solar and wind.
+`GET /renewable_production` returns actual and forecast production from solar and wind.
 
 ```text
 # HELP miso_renewable_production_w The amount of power produced from renewable sources
@@ -77,10 +77,10 @@ miso_renewable_production_w{kind="actual",source="solar"} -5.02e+06 168879240000
 miso_renewable_production_w{kind="actual",source="solar"} 1.78845e+09 1688849940000
 miso_renewable_production_w{kind="actual",source="wind"} 3.21474e+09 1688792400000
 …
-miso_renewable_production_w{kind="actual",source="wind"} 4.56701e+09 1688849940000
+miso_renewable_production_w{kind="forecast",source="wind"} 7.952e+09 1688965140000
 ```
 
-`GET /fuel` returns production by fuel type.
+`GET /fuel` returns actual production by fuel type.
 
 ```text
 # HELP miso_fuel_w The amount of power produced using a particular fuel

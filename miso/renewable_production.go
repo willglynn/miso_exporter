@@ -9,10 +9,15 @@ import (
 	"time"
 )
 
-type RenewableProduction struct {
+type RenewableDatapoint struct {
 	StartAt   time.Time // inclusive
 	EndAt     time.Time // exclusive
 	Megawatts float64
+}
+
+type RenewableProduction struct {
+	Actual   []RenewableDatapoint
+	Forecast []RenewableDatapoint
 }
 
 type Renewable int
@@ -33,13 +38,13 @@ const (
 	RenewableWind
 )
 
-func (c Client) RenewableProduction(ctx context.Context, kind Renewable) ([]RenewableProduction, error) {
+func (c Client) RenewableProduction(ctx context.Context, kind Renewable) (*RenewableProduction, error) {
 	var url string
 	switch kind {
 	case RenewableSolar:
-		url = "https://api.misoenergy.org/MISORTWDDataBroker/DataBrokerServices.asmx?messageType=getSolarActual&returnType=json"
+		url = "https://api.misoenergy.org/MISORTWDDataBroker/DataBrokerServices.asmx?messageType=getSolar&returnType=json"
 	case RenewableWind:
-		url = "https://api.misoenergy.org/MISORTWDDataBroker/DataBrokerServices.asmx?messageType=getWindActual&returnType=json"
+		url = "https://api.misoenergy.org/MISORTWDDataBroker/DataBrokerServices.asmx?messageType=getWind&returnType=json"
 	default:
 		return nil, errors.New("invalid kind")
 	}
@@ -59,9 +64,12 @@ func (c Client) RenewableProduction(ctx context.Context, kind Renewable) ([]Rene
 		MktDay   string `json:"MktDay"`
 		RefId    string `json:"RefId"`
 		Instance []struct {
-			DateTimeEST   string `json:"DateTimeEST"` // "2023-07-08 1:00:00 AM"
-			HourEndingEST string `json:"HourEndingEST"`
-			Value         string `json:"Value"`
+			ForecastDateTimeEST   *string `json:"ForecastDateTimeEST"`
+			ForecastHourEndingEST *string `json:"ForecastHourEndingEST"`
+			ForecastValue         *string `json:"ForecastValue"`
+			ActualDateTimeEST     *string `json:"ActualDateTimeEST"`
+			ActualHourEndingEST   *string `json:"ActualHourEndingEST"`
+			ActualValue           *string `json:"ActualValue"`
 		} `json:"instance"`
 	}
 
@@ -69,24 +77,47 @@ func (c Client) RenewableProduction(ctx context.Context, kind Renewable) ([]Rene
 		return nil, err
 	}
 
-	var out []RenewableProduction
+	var forecast, actual []RenewableDatapoint
 	for _, hour := range data.Instance {
-		startAt, err := time.ParseInLocation("2006-01-02 3:04:05 PM", hour.DateTimeEST, tz)
-		if err != nil {
-			return nil, err
+		if hour.ForecastHourEndingEST != nil && hour.ForecastValue != nil {
+			startAt, err := time.ParseInLocation("2006-01-02 3:04:05 PM", *hour.ForecastDateTimeEST, tz)
+			if err != nil {
+				return nil, err
+			}
+
+			megawatts, err := strconv.ParseFloat(*hour.ForecastValue, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			forecast = append(forecast, RenewableDatapoint{
+				StartAt:   startAt,
+				EndAt:     startAt.Add(time.Hour),
+				Megawatts: megawatts,
+			})
 		}
 
-		megawatts, err := strconv.ParseFloat(hour.Value, 64)
-		if err != nil {
-			return nil, err
-		}
+		if hour.ActualDateTimeEST != nil && hour.ActualValue != nil {
+			startAt, err := time.ParseInLocation("2006-01-02 3:04:05 PM", *hour.ActualDateTimeEST, tz)
+			if err != nil {
+				return nil, err
+			}
 
-		out = append(out, RenewableProduction{
-			StartAt:   startAt,
-			EndAt:     startAt.Add(time.Hour),
-			Megawatts: megawatts,
-		})
+			megawatts, err := strconv.ParseFloat(*hour.ActualValue, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			actual = append(actual, RenewableDatapoint{
+				StartAt:   startAt,
+				EndAt:     startAt.Add(time.Hour),
+				Megawatts: megawatts,
+			})
+		}
 	}
 
-	return out, nil
+	return &RenewableProduction{
+		Actual:   actual,
+		Forecast: forecast,
+	}, nil
 }

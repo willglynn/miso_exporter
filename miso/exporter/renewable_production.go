@@ -26,10 +26,15 @@ func (c renewableProduction) Collect(metrics chan<- prometheus.Metric) {
 		return
 	}
 
-	for _, entry := range production {
-		m := prometheus.MustNewConstMetric(c.renewableProduction, prometheus.GaugeValue, float64(entry.Megawatts)*1_000_000)
-		for t := entry.StartAt; t.Before(entry.EndAt); t = t.Add(time.Minute) {
-			metrics <- prometheus.NewMetricWithTimestamp(t, m)
+	for kind, datapoints := range map[string][]miso.RenewableDatapoint{
+		"actual":   production.Actual,
+		"forecast": production.Forecast,
+	} {
+		for _, entry := range datapoints {
+			m := prometheus.MustNewConstMetric(c.renewableProduction, prometheus.GaugeValue, float64(entry.Megawatts)*1_000_000, kind)
+			for t := entry.StartAt; t.Before(entry.EndAt); t = t.Add(time.Minute) {
+				metrics <- prometheus.NewMetricWithTimestamp(t, m)
+			}
 		}
 	}
 }
@@ -41,8 +46,7 @@ func NewRenewableProduction(client *miso.Client, source miso.Renewable) promethe
 
 		renewableProduction: prometheus.NewDesc("miso_renewable_production_w",
 			"The amount of power produced from renewable sources",
-			nil, map[string]string{
-				"kind":   "actual",
+			[]string{"kind"}, map[string]string{
 				"source": source.String(),
 			},
 		),
