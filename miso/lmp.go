@@ -118,9 +118,12 @@ func (b lmpBlob) toLMPTime(ref time.Time, duration time.Duration) (LMPTime, erro
 			out.StartAt = ref.Add(time.Duration((he-1)*3600) * time.Second)
 		}
 	} else {
+		// By the logic above:
+		// "11:05" means 11:00-11:04:59
+		// "00:00" means 23:55-23:59 the day before
 		t, err := time.ParseInLocation("2006-01-02 15:04", ref.Format("2006-01-02")+" "+b.HourAndMin, tz)
 		if err == nil {
-			out.StartAt = t
+			out.StartAt = t.Add(-5 * time.Minute)
 		}
 	}
 
