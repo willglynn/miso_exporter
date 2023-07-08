@@ -28,15 +28,16 @@ func main() {
 
 	load := exporter.NewLoad(c)
 	lmp := exporter.NewPrice(c)
-
 	solarProduction := exporter.NewRenewableProduction(c, miso.RenewableSolar)
 	windProduction := exporter.NewRenewableProduction(c, miso.RenewableWind)
+	fuel := exporter.NewFuel(c)
 
-	mux.Handle("/metrics", handlerFor(load, lmp, solarProduction, windProduction))
+	mux.Handle("/metrics", handlerFor(load, lmp, solarProduction, windProduction, fuel))
 
 	mux.Handle("/load", handlerFor(load))
 	mux.Handle("/lmp", handlerFor(lmp))
 	mux.Handle("/renewable_production", handlerFor(solarProduction, windProduction))
+	mux.Handle("/fuel", handlerFor(fuel))
 
 	var addr string
 	addr = os.Getenv("LISTEN")

@@ -80,6 +80,15 @@ miso_renewable_production_w{kind="actual",source="wind"} 3.21474e+09 16887924000
 miso_renewable_production_w{kind="actual",source="wind"} 4.56701e+09 1688849940000
 ```
 
+`GET /fuel` returns production by fuel type.
+
+```text
+# HELP miso_fuel_w The amount of power produced using a particular fuel
+# TYPE miso_fuel_w gauge
+miso_fuel_w{kind="actual",name="Coal"} 3.1159e+10 1688852400000
+…
+miso_fuel_w{kind="actual",name="Wind"} 4.604e+09 1688852640000
+```
 
 `GET /metrics` returns all of the above.
 
