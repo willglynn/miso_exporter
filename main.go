@@ -11,26 +11,32 @@ import (
 	"github.com/willglynn/miso_exporter/miso/exporter"
 )
 
-func main() {
-	opts := promhttp.HandlerOpts{
-		EnableOpenMetrics: true,
+func handlerFor(collector ...prometheus.Collector) http.Handler {
+	reg := prometheus.NewRegistry()
+	for _, c := range collector {
+		reg.MustRegister(c)
 	}
+	return promhttp.HandlerFor(reg, promhttp.HandlerOpts{
+		EnableOpenMetrics: true,
+	})
+}
+
+func main() {
 	mux := http.NewServeMux()
 
 	c := miso.NewClient(http.DefaultTransport)
 
-	metrics := prometheus.NewRegistry()
-	metrics.MustRegister(exporter.NewLoad(c))
-	metrics.MustRegister(exporter.NewPrice(c))
-	mux.Handle("/metrics", promhttp.HandlerFor(metrics, opts))
+	load := exporter.NewLoad(c)
+	lmp := exporter.NewPrice(c)
 
-	realtime := prometheus.NewRegistry()
-	realtime.MustRegister(exporter.NewLoad(c))
-	mux.Handle("/load", promhttp.HandlerFor(realtime, opts))
+	solarProduction := exporter.NewRenewableProduction(c, miso.RenewableSolar)
+	windProduction := exporter.NewRenewableProduction(c, miso.RenewableWind)
 
-	lmp := prometheus.NewRegistry()
-	lmp.MustRegister(exporter.NewPrice(c))
-	mux.Handle("/lmp", promhttp.HandlerFor(lmp, opts))
+	mux.Handle("/metrics", handlerFor(load, lmp, solarProduction, windProduction))
+
+	mux.Handle("/load", handlerFor(load))
+	mux.Handle("/lmp", handlerFor(lmp))
+	mux.Handle("/renewable_production", handlerFor(solarProduction, windProduction))
 
 	var addr string
 	addr = os.Getenv("LISTEN")

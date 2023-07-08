@@ -67,7 +67,21 @@ miso_load_total_w{kind="forecast"} 7.2009e+10 1688792400000
 …
 ```
 
-`GET /metrics` returns both.
+`GET /renewable_production` returns actual production from solar and wind.
+
+```text
+# HELP miso_renewable_production_w The amount of power produced from renewable sources
+# TYPE miso_renewable_production_w gauge
+miso_renewable_production_w{kind="actual",source="solar"} -5.02e+06 1688792400000
+…
+miso_renewable_production_w{kind="actual",source="solar"} 1.78845e+09 1688849940000
+miso_renewable_production_w{kind="actual",source="wind"} 3.21474e+09 1688792400000
+…
+miso_renewable_production_w{kind="actual",source="wind"} 4.56701e+09 1688849940000
+```
+
+
+`GET /metrics` returns all of the above.
 
 ## Prometheus configuration
 
