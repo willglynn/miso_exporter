@@ -100,6 +100,7 @@ A good starting point:
 scrape_configs:
   - job_name: 'miso'
     scrape_interval: 2m
+    scrape_timeout: 1m
     static_configs:
       - targets:
           - http://localhost:2023
@@ -108,6 +109,6 @@ scrape_configs:
 `/metrics` returns unusually large responses, exceeding e.g. VictoriaMetrics' default maximum scrape size of 16 MB.
 `-promscrape.maxScrapeSize=67108864` seems to work.
 
-As of this writing, `miso_price_usd` (`/metrics` or `/lmp`) produces 4116 series. This is very high cardinality but it
-is also very low churn; series are created or destroyed only as the set of nodes changes, and MISO nodes correspond to
-long-lived capital projects like substations or power plants.
+As of this writing, `miso_price_usd` (via `/metrics` or `/lmp`) produces 4116 series. This is very high cardinality but
+it is also very low churn; series are created or destroyed only as the set of nodes changes, and MISO nodes correspond
+to long-lived capital projects like substations or power plants.
