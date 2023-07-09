@@ -2,7 +2,6 @@ package exporter
 
 import (
 	"context"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/willglynn/miso_exporter/miso"
@@ -32,9 +31,7 @@ func (c renewableProduction) Collect(metrics chan<- prometheus.Metric) {
 	} {
 		for _, entry := range datapoints {
 			m := prometheus.MustNewConstMetric(c.renewableProduction, prometheus.GaugeValue, float64(entry.Megawatts)*1_000_000, kind)
-			for t := entry.StartAt; t.Before(entry.EndAt); t = t.Add(time.Minute) {
-				metrics <- prometheus.NewMetricWithTimestamp(t, m)
-			}
+			emit(metrics, m, entry.StartAt, entry.EndAt)
 		}
 	}
 }

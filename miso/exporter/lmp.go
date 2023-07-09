@@ -2,7 +2,6 @@ package exporter
 
 import (
 	"context"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/willglynn/miso_exporter/miso"
@@ -32,14 +31,9 @@ func (l price) Collect(metrics chan<- prometheus.Metric) {
 		"expost": lmp.DayAheadExPostLMP,
 	} {
 		for _, node := range data.Nodes {
-			lmp := prometheus.MustNewConstMetric(l.price, prometheus.GaugeValue, float64(node.LMP), kind, node.Region, node.Name, "LMP")
-			mlc := prometheus.MustNewConstMetric(l.price, prometheus.GaugeValue, float64(node.MLC), kind, node.Region, node.Name, "MLC")
-			mcc := prometheus.MustNewConstMetric(l.price, prometheus.GaugeValue, float64(node.MCC), kind, node.Region, node.Name, "MCC")
-			for t := data.StartAt; t.Before(data.EndAt); t = t.Add(time.Minute) {
-				metrics <- prometheus.NewMetricWithTimestamp(t, lmp)
-				metrics <- prometheus.NewMetricWithTimestamp(t, mlc)
-				metrics <- prometheus.NewMetricWithTimestamp(t, mcc)
-			}
+			emit(metrics, prometheus.MustNewConstMetric(l.price, prometheus.GaugeValue, float64(node.LMP), kind, node.Region, node.Name, "LMP"), data.StartAt, data.EndAt)
+			emit(metrics, prometheus.MustNewConstMetric(l.price, prometheus.GaugeValue, float64(node.MLC), kind, node.Region, node.Name, "MLC"), data.StartAt, data.EndAt)
+			emit(metrics, prometheus.MustNewConstMetric(l.price, prometheus.GaugeValue, float64(node.MCC), kind, node.Region, node.Name, "MCC"), data.StartAt, data.EndAt)
 		}
 	}
 }

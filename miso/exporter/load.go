@@ -28,17 +28,13 @@ func (l load) Collect(metrics chan<- prometheus.Metric) {
 	for _, hour := range forecast.HourlyForecast {
 		m := prometheus.MustNewConstMetric(l.load, prometheus.GaugeValue, float64(hour.Megawatts)*1_000_000, "forecast")
 		end := hour.At.Add(time.Hour)
-		for t := hour.At; t.Before(end); t = t.Add(time.Minute) {
-			metrics <- prometheus.NewMetricWithTimestamp(t, m)
-		}
+		emit(metrics, m, hour.At, end)
 	}
 
 	for _, min := range forecast.FiveMinuteLoad {
 		m := prometheus.MustNewConstMetric(l.load, prometheus.GaugeValue, float64(min.Megawatts)*1_000_000, "actual")
 		end := min.At
-		for t := min.At.Add(-5 * time.Minute); t.Before(end); t = t.Add(time.Minute) {
-			metrics <- prometheus.NewMetricWithTimestamp(t, m)
-		}
+		emit(metrics, m, end.Add(-5*time.Minute), end)
 	}
 }
 
