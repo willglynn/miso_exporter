@@ -104,6 +104,10 @@ scrape_configs:
     static_configs:
       - targets:
           - http://localhost:2023
+    metric_relabel_configs:
+      - if: '{__name__=~"^miso_.*"}'
+        action: labeldrop
+        regex: "instance|job"
 ```
 
 `/metrics` returns unusually large responses, exceeding e.g. VictoriaMetrics' default maximum scrape size of 16 MB.
